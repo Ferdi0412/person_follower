@@ -35,28 +35,35 @@ set(ONNXRUNTIME_LIB "${ONNXRUNTIME_DIR}/lib/libonnxruntime.so")
 
 
 ### === Library for ease-of-use === ====================================
-add_library(person_follower INTERFACE)
+find_package(OpenCV REQUIRED)
 
-target_include_directories(person_follower INTERFACE
+
+add_library(person_follower_lib INTERFACE)
+
+target_include_directories(person_follower_lib INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
     $<INSTALL_INTERFACE:include>
     "${CMAKE_SOURCE_DIR}/include"
     "${ONNXRUNTIME_DIR}/include"
 )
 
-target_link_libraries(person_follower INTERFACE 
+target_link_libraries(person_follower_lib INTERFACE 
     ${OpenCV_LIBS}
     ${ONNXRUNTIME_LIB}
 )
 
+target_include_directories(person_follower_lib INTERFACE
+    ${OpenCV_INCLUDE_DIRS}
+)
+
 get_filename_component(PERSON_FOLLOWER_PARENT_DIR "${CMAKE_CURRENT_LIST_DIR}" DIRECTORY)
 
-target_compile_definitions(person_follower INTERFACE
+target_compile_definitions(person_follower_lib INTERFACE
     PERSON_FOLLOWER_DIR="${PERSON_FOLLOWER_PARENT_DIR}"
 )
 
 function(target_link_person_follower name)
-    target_link_libraries(${name} PRIVATE person_follower)
+    target_link_libraries(${name} PRIVATE person_follower_lib)
 
     set_target_properties(${name} PROPERTIES
         BUILD_RPATH "${ONNXRUNTIME_DIR}/lib"

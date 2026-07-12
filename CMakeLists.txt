@@ -29,8 +29,9 @@ find_package(
 )
 
 generate_dynamic_reconfigure_options(
-    cfg/Pose.cfg
-    cfg/Tracking.cfg
+    cfg/PoseEstimate.cfg
+    cfg/HandEstimate.cfg
+    cfg/Control.cfg
 )
 
 
@@ -70,7 +71,7 @@ function(add_node name file)
     target_include_directories(${name} PRIVATE
         ${catkin_INCLUDE_DIRS}
         ${OpenCV_INCLUDE_DIRS}
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/include
     )
 
     # Following function is from person_follower/person_follower.cmake
@@ -91,7 +92,9 @@ endfunction()
 ###-=====-###
 ### Nodes ###
 ###-=====-###
-add_node(body_pose src/body_pose.cpp)
-add_node(simple_full_pose src/naive/simple_full_pose.cpp)
+add_node(pose_node src/pose.cpp)
+add_node(core_node src/core.cpp)
+add_node(reid_server src/reid_server.cpp)
 
-# add_py_node(scripts/hands.py)
+add_py_node(scripts/gestures.py)
+add_py_node(scripts/follow_state.py)

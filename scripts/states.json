@@ -1,0 +1,5 @@
+[
+    {"name": "follow", "enter": "follow-me", "exit": "stop", "release": 1},
+    {"name": "stop",   "enter": "stop", "debounce": 1},
+    {"name": "spin",   "enter": "spin"}
+]

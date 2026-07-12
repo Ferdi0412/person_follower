@@ -193,14 +193,16 @@ namespace person_follower {
 
                         // Defaults
                         trtopts.trt_max_partition_iterations = 1000;
-                        trtopts.trt_min_subgraph_size = 1;
-                        trtopts.trt_max_workspace_size = 1073741824;
+                        trtopts.trt_min_subgraph_size = 10;
+                        // Max 256 MB
+                        trtopts.trt_max_workspace_size = 256 * (1024 * 1024);
+                        // trtopts.trt_context_memory_sharing_enable = 1; // Not available 
 
                         // Cache TensorRT for quicker subsequent startup
                         if ( cache_dir.size() ) {
                             trtopts.trt_engine_cache_enable = 1;
                             trtopts.trt_engine_cache_path = cache_dir.c_str();
-                            trtopts.trt_fp16_enable = 0;
+                            trtopts.trt_fp16_enable = 0; // 1;
                         }
 
                         options.AppendExecutionProvider_TensorRT(trtopts);

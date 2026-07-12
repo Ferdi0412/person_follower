@@ -137,7 +137,9 @@ namespace person_follower {
                         hand.landmarks[0],
                         hand.landmarks[5]
                     );
-                    return detect(image, roi);
+                    MPHand result = detect(image, roi);
+                    result.score = result.score * 0.3 + hand.score * 0.7;
+                    return result;
                 }
 
             private:
