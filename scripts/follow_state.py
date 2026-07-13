@@ -17,7 +17,7 @@ from person_follower_msgs.msg import PoseArray
 IDLE         = "IDLE"
 FOLLOW_STATE = "FOLLOW_STATE"
 
-FOLLOW_STANDOFF = 0.75
+FOLLOW_STANDOFF = 1.0
 FOLLOW_STEP     = 0.25
 VIS_THRESHOLD   = 0.65
 KEEP_ALIVE      = 15
