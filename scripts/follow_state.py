@@ -115,6 +115,9 @@ class StateMachine:
     def idle(self):
         return self._current_state == self._idle_state
 
+    def has(self, gesture):
+        return (self._current_state, gesture) in self._table
+
     def reset(self):
         self._current_state = self._idle_state
         self._last_gesture  = None
@@ -156,6 +159,7 @@ class FollowStateNode:
         self.owner = None
         self.last_seen = None
         self.last_published = None
+        self.last_received  = None
 
         self.pose_frame_id = None
 
@@ -170,7 +174,10 @@ class FollowStateNode:
     def gesture_callback(self, msg):
         state = self.state_machine.update(msg.data)
 
-        state = self.state_machine.update(msg.data)
+        if self.last_received != msg.data: # self.state_machine.has(msg.data):
+            rospy.loginfo("person_follower_state_node: now receiving '%s'", msg.data)
+            self.last_received = msg.data
+
         if state != self.last_published:
             self.state_pub.publish(String(data=state))
             self.last_published = state
@@ -197,7 +204,10 @@ class FollowStateNode:
                     self.mark_missing()
                 return
 
-            self.mark_missing()
+            else:
+                return
+
+        self.mark_missing()
 
     def select_facing(self, msg):
         for p in msg.poses:
