@@ -1,5 +1,5 @@
 [
-    {"name": "follow", "enter": "follow-me", "exit": "stop", "release": 1},
-    {"name": "stop",   "enter": "stop", "debounce": 1},
+    {"name": "follow", "enter": "follow-me", "exit": "stop"},
+    {"name": "stop",   "enter": "stop"},
     {"name": "spin",   "enter": "spin"}
 ]

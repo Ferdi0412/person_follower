@@ -63,34 +63,6 @@ def _build_transitions(definitions: List[StateDefinition], idle) -> Dict[Tuple[s
 
 class StateMachine:
     """Table-driven state machine, keys are (state, gesture), values are next state"""
-    @staticmethod
-    def from_json(filename, idle = 'IDLE', debounce = 3):
-        with open(filename, 'r', encoding='utf-8') as file:
-            data = json.load(file)
-        
-        if isinstance(data, dict):
-            definitions = [StateDefinition(
-                name     = key,
-                enter    = value['enter'],
-                exit     = value.get('exit'),
-                debounce = value.get('debounce', debounce),
-                release  = value.get('release')
-            ) for key, value in data.items()]
-
-        elif isinstance(data, list):
-            definitions = [StateDefinition(
-                name     = value['name'],
-                enter    = value['enter'],
-                exit     = value.get('exit'),
-                debounce = value.get('debounce', debounce),
-                release  = value.get('release')
-            ) for value in data]
-
-        else:
-            raise RuntimeError(f"Malformed state json '{filename}'")
-
-        return StateMachine(definitions, idle)
-
     def __init__(self, definitions: List[StateDefinition], idle = "IDLE"):
         self._idle_state    = idle
         self._current_state = idle
@@ -110,10 +82,14 @@ class StateMachine:
     @property
     def current_state(self):
         return self._current_state
-    
+
     @property
-    def idle(self):
-        return self._current_state == self._idle_state
+    def idle_state(self):
+        return self._idle_state
+
+    @property
+    def debounced(self):
+        return self._repeat_count > 3
 
     def has(self, gesture):
         return (self._current_state, gesture) in self._table
@@ -147,6 +123,30 @@ class StateMachine:
         
         return self._current_state 
 
+    @staticmethod
+    def from_json(filename, idle = 'IDLE', debounce = 3):
+        with open(filename, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+        
+        if isinstance(data, dict):
+            definitions = [StateDefinition(
+                name     = key,
+                enter    = value['enter'],
+                exit     = value.get('exit')
+            ) for key, value in data.items()]
+
+        elif isinstance(data, list):
+            definitions = [StateDefinition(
+                name     = value['name'],
+                enter    = value['enter'],
+                exit     = value.get('exit')
+            ) for value in data]
+
+        else:
+            raise RuntimeError(f"Malformed state json '{filename}'")
+
+        return StateMachine(definitions, idle)
+
 ################
 ### ROS NODE ###
 ################
@@ -159,7 +159,6 @@ class FollowStateNode:
         self.owner = None
         self.last_seen = None
         self.last_published = None
-        self.last_received  = None
 
         self.pose_frame_id = None
 
@@ -174,10 +173,11 @@ class FollowStateNode:
     def gesture_callback(self, msg):
         state = self.state_machine.update(msg.data)
 
-        if self.last_received != msg.data: # self.state_machine.has(msg.data):
-            rospy.loginfo("person_follower_state_node: now receiving '%s'", msg.data)
-            self.last_received = msg.data
+        # If state is idle, but the gesture is not none - forward it
+        if state == self.state_machine.idle_state and len(msg.data) and self.state_machine.debounced:
+            state = msg.data
 
+        # Only publish on change - latching
         if state != self.last_published:
             self.state_pub.publish(String(data=state))
             self.last_published = state
@@ -217,7 +217,10 @@ class FollowStateNode:
                 self.last_seen = 0
                 return
 
+
+
     def follow(self, pose):
+        """Publishes basic_target from move_base."""
         dx = p.pose.position.x
         dz = p.pose.position.z
 
@@ -238,6 +241,8 @@ class FollowStateNode:
         goal.pose.position.z = uz * stp
         goal.pose.position.w = 1.0
         self.goal_pub.publish(goal)
+
+
 
     def is_facing(self, pose):
         # Check both eyes are visible, and nose is roughly middle of ears
