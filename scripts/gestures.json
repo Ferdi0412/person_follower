@@ -1,0 +1,43 @@
+[
+    {
+        "name": "good", "hand": "either", "finger_states": {
+            "thumb":  "open",
+            "index":  "folded",
+            "middle": "folded",
+            "ring":   "folded",
+            "pinky":  "folded"
+        }, "thumb_dir": "up"
+    },
+    {
+        "name": "follow-me", "hand": "either", "finger_states": {
+            "index":  "open",
+            "middle": "open",
+            "ring":   "open",
+            "pinky":  "open"
+        }, "knuckle_dir": "up", "palm_dir": "away", "motion": "away"
+    },
+    {
+        "name": "stop", "hand": "either", "finger_states": {
+            "index":  "folded",
+            "middle": "folded",
+            "ring":   "folded",
+            "pinky":  "folded"
+        }, "knuckle_dir": "up", "palm_dir": "towards"
+    },
+    {
+        "name": "move-forward", "hand": "either", "finger_states": {
+            "index":  "open",
+            "middle": "open",
+            "ring":   "open",
+            "pinky":  "open"
+        }, "knuckle_dir": "up", "palm_dir": "towards", "motion": "towards"
+    },
+    {
+        "name": "move-back", "hand": "either", "finger_states": {
+            "index":  "open",
+            "middle": "open",
+            "ring":   "open",
+            "pinky":  "open"
+        }, "knuckle_dir": "up", "palm_dir": "towards", "motion": "away"
+    }
+]
