@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """A simple state machine, defining the state transitions supported by the state_machine node."""
-import json
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
+import math
+import json
 
 import rospkg
 import rospy
@@ -15,7 +16,7 @@ from person_follower_msgs.msg import PoseArray
 ### CONFIG ###
 ##############
 IDLE         = "IDLE"
-FOLLOW_STATE = "FOLLOW_STATE"
+FOLLOW_STATE = "follow"
 
 FOLLOW_STANDOFF = 1.0
 FOLLOW_STEP     = 0.25
@@ -162,6 +163,8 @@ class FollowStateNode:
         self.last_published = None
 
         self.pose_frame_id = None
+        self.last_x = 0
+        self.last_z = 0
 
         self.state_pub  = rospy.Publisher("/person_follower/state",  String, queue_size=1, latch=True)
         self.target_pub = rospy.Publisher("/person_follower/target", UInt32, queue_size=1, latch=True)
@@ -171,8 +174,12 @@ class FollowStateNode:
 
         self.goal_pub    = rospy.Publisher("/move_base_simple/goal", PoseStamped, queue_size=1)
 
+
+
     def release_target(self):
         self.target_pub.publish(UInt32(data=0))
+
+
 
     def gesture_callback(self, msg):
         state = self.state_machine.update(msg.data)
@@ -185,7 +192,11 @@ class FollowStateNode:
         if state != self.last_published:
             self.state_pub.publish(String(data=state))
             self.last_published = state
+            self.last_x = 0
+            self.last_z = 0
             rospy.loginfo("person_follower_state_node: state is now '%s'", state)
+
+
 
     def pose_callback(self, msg):
         self.target_pub.publish(UInt32(data=self.owner))
@@ -213,6 +224,8 @@ class FollowStateNode:
 
         self.mark_missing()
 
+
+
     def select_facing(self, msg):
         for p in msg.poses:
             if self.is_facing(p):
@@ -223,28 +236,39 @@ class FollowStateNode:
 
 
 
-    def follow(self, pose):
+    def follow(self, p):
         """Publishes basic_target from move_base."""
-        dx = p.pose.position.x
-        dz = p.pose.position.z
+        dx = p.position.x
+        dz = p.position.z
 
         d = math.hypot(dx, dz)
         if d < 1e-6:
             return
 
-        if d <= FOLLOW_STANDOFF:
+        goal_d = d - FOLLOW_STANDOFF
+
+        if goal_d < 0:
             return
 
-        ux, uz = dx / d, dz / d
-        step = min(FOLLOW_STEP, dist - FOLLOW_STANDOFF)
+        x = (dx / d) * goal_d
+        z = (dz / d) * goal_d
 
+        if abs(math.hypot(x - self.last_x, z - self.last_z)) < FOLLOW_STEP:
+            return 
+
+        goal = PoseStamped()
         goal.header.frame_id = self.pose_frame_id
-        goal.header.stamp    = rospy.Time.now()
-        goal.pose.position.x = ux * step
+        goal.header.stamp    = rospy.Time.now() - rospy.Duration(0.5) # SIMULATION OFFSET
+        goal.pose.position.x = (dx / d) * goal_d
         goal.pose.position.y = 0.0
-        goal.pose.position.z = uz * stp
-        goal.pose.position.w = 1.0
+        goal.pose.position.z = (dz / d) * goal_d
+        goal.pose.orientation.w = 1.0
+
         self.goal_pub.publish(goal)
+        print(goal)
+
+        self.last_x = goal.pose.position.x
+        self.last_z = goal.pose.position.z
 
 
 
@@ -258,6 +282,7 @@ class FollowStateNode:
         return nose.x < left_ear.x and right_ear.x < nose.x
 
 
+
     def mark_missing(self):
         self.last_seen += 1
         if self.last_seen > KEEP_ALIVE:
@@ -265,9 +290,12 @@ class FollowStateNode:
             self.last_seen = None
             self.target_pub.publish(UInt32(data=0))
 
+
+
     def clear_all(self):
         self.target_pub.publish(UInt32(data=0))
         self.state_pub.publish("")
+
 
 
 ###################
