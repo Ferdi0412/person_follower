@@ -503,7 +503,5 @@ if __name__ == "__main__":
 
     gestures = GestureTemplate.from_json(package_root + "/scripts/gestures.json")
 
-    print(gestures)
-
     node = GestureNode(gestures)
     rospy.spin()
