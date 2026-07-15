@@ -20,7 +20,9 @@ class Handser {
 
         /// @brief Runs MediaPipe model, if target is non-zero
         /// @note If annot_pub evaluates as `true`, an annotated image will be published
-        PoseArrayMsg update(const ImagePtrStruct& data, 
+        /// @param position is the last known position of the "center of mass"-ish of person
+        PoseArrayMsg update(cv::Point3f& position,
+                            const ImagePtrStruct& data, 
                             const Intrinsics& intrinsics,
                             const PoseArrayMsg& poses,
                             uint32_t target,
@@ -36,12 +38,13 @@ class Handser {
         /// @brief Update output message
         void append_hand(PoseArrayMsg& out, 
                          const MPHand& hand, 
+                         const cv::Point3f& position,
                          bool is_right,
                          const ImagePtrStruct& data, 
                          const Intrinsics& intrinsics) const;
 
         /// @brief Visualization markers showing position of hand landmarks
-        MarkerArrayMsg landmarker_markers(const PoseArrayMsg& hands) const;
+        MarkerArrayMsg landmarker_markers(const PoseArrayMsg& hands, const cv::Point3f& position) const;
 
     private:
         /// @brief Dynamic reconfigure callback
@@ -99,7 +102,8 @@ void Handser::init() {
 }
 
 // "Forward pass"
-PoseArrayMsg Handser::update(const ImagePtrStruct& data,
+PoseArrayMsg Handser::update(cv::Point3f& position,
+                             const ImagePtrStruct& data,
                              const Intrinsics& intrinsics,
                              const PoseArrayMsg& poses,
                              uint32_t target,
@@ -109,6 +113,7 @@ PoseArrayMsg Handser::update(const ImagePtrStruct& data,
         current = target;
         left.score  = 0;
         right.score = 0;
+        position = cv::Point3f(0, 0, 0);
     }
 
     PoseArrayMsg out;
@@ -117,8 +122,17 @@ PoseArrayMsg Handser::update(const ImagePtrStruct& data,
     bool updated_left = false;
     bool updated_right = false;
 
-    // If no target - do nothing
-    if ( current != 0 ) {
+    // Only need to update hands in the case that a target is specified
+    if ( current ) {
+        // Update last known position
+        for ( const auto& p: poses.poses ) {
+            if ( p.id == current ) {
+                position.x = p.pose.position.x;
+                position.y = p.pose.position.y;
+                position.z = p.pose.position.z;
+            }
+        }
+
         // Update hands using previous position - quick path
         if ( left.score > hand_conf ) {
             left = hand_model->detect(data.rgb->image, left);
@@ -153,10 +167,10 @@ PoseArrayMsg Handser::update(const ImagePtrStruct& data,
 
         // Update pose array
         if ( left.score > hand_conf )
-            append_hand(out, left, false, data, intrinsics);
+            append_hand(out, left, position, false, data, intrinsics);
 
         if ( right.score > hand_conf )
-            append_hand(out, right, true, data, intrinsics);
+            append_hand(out, right, position, true, data, intrinsics);
     }
 
     // Draw
@@ -310,6 +324,7 @@ void Handser::reconfigure(person_follower::HandEstimateConfig& config, uint32_t 
 // Format PoseMsg for hand
 void Handser::append_hand(PoseArrayMsg& out,
                           const MPHand& hand,
+                          const cv::Point3f& position,
                           bool is_right, 
                           const ImagePtrStruct& data,
                           const Intrinsics& intrinsics) const {
@@ -353,16 +368,17 @@ void Handser::append_hand(PoseArrayMsg& out,
 
         auto pos = intrinsics.world(middle_mcp.x, middle_mcp.y, z);
 
-        handpose.pose.position.x = pos.x;
+        // Keep position relative to person's "spine"-ish
+        handpose.pose.position.x = pos.x - position.x;
         handpose.pose.position.y = pos.y;
-        handpose.pose.position.z = pos.z;
+        handpose.pose.position.z = pos.z - position.z;
     }
 
     out.poses.push_back(handpose);
 }
 
 
-MarkerArrayMsg Handser::landmarker_markers(const PoseArrayMsg& hands) const {
+MarkerArrayMsg Handser::landmarker_markers(const PoseArrayMsg& hands, const cv::Point3f& position) const {
     constexpr float DIAM = 0.02;
     visualization_msgs::MarkerArray markers;
 
@@ -382,9 +398,9 @@ MarkerArrayMsg Handser::landmarker_markers(const PoseArrayMsg& hands) const {
             marker.type = visualization_msgs::Marker::SPHERE;
             marker.action = visualization_msgs::Marker::ADD;
 
-            marker.pose.position.x = k.x + p.pose.position.x;
-            marker.pose.position.y = k.y + p.pose.position.y;
-            marker.pose.position.z = k.z + p.pose.position.z;
+            marker.pose.position.x = k.x + p.pose.position.x + position.x;
+            marker.pose.position.y = k.y + p.pose.position.y + position.y;
+            marker.pose.position.z = k.z + p.pose.position.z + position.z;
             marker.pose.orientation.x = 0;
             marker.pose.orientation.y = 0;
             marker.pose.orientation.z = 0;

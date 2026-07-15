@@ -153,6 +153,7 @@ class StateMachine:
 class FollowStateNode:
     def __init__(self, state_machine):
         rospy.init_node("person_follower_state_node")
+        rospy.on_shutdown(self.release_target)
 
         self.state_machine = state_machine
 
@@ -169,6 +170,9 @@ class FollowStateNode:
         self.pose_sub    = rospy.Subscriber("/person_follower/pose",    PoseArray, self.pose_callback,    queue_size=1)
 
         self.goal_pub    = rospy.Publisher("/move_base_simple/goal", PoseStamped, queue_size=1)
+
+    def release_target(self):
+        self.target_pub.publish(UInt32(data=0))
 
     def gesture_callback(self, msg):
         state = self.state_machine.update(msg.data)

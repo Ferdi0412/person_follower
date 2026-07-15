@@ -28,6 +28,7 @@ ros::Publisher hands_vis;
 ros::Subscriber target_sub;
 ros::Publisher  target_ack;
 uint32_t target = 0;
+cv::Point3f target_position {0, 0, 0};
 
 
 // Target callback
@@ -70,11 +71,11 @@ void callback(const sensor_msgs::Image::ConstPtr& rgb_msg,
     target_ack_msg.data = target;
     target_ack.publish(target_ack_msg);
 
-    PoseArrayMsg hands = handser.update(data, intrinsics, poses, target, poser.keypoint_conf, hands_annot);
+    PoseArrayMsg hands = handser.update(target_position, data, intrinsics, poses, target, poser.keypoint_conf, hands_annot);
     hands_pub.publish(hands);
 
     if ( hands_vis.getNumSubscribers() )
-        hands_vis.publish(handser.landmarker_markers(hands));
+        hands_vis.publish(handser.landmarker_markers(hands, target_position));
 }
 
 // Entry point

@@ -66,7 +66,6 @@
             "pinky":  "open"
         },
         "knuckle_dir": "up",
-        "palm_dir":    "towards",
-        "motion":      "static"
+        "palm_dir":    "towards"
     }
 }
