@@ -384,11 +384,11 @@ class ControlNode:
             
             if embedding:
                 sim = cosine_similarity(embedding, self.embedding)
-                rospy.loginfo("follow_state_node2: sim for %u and %u %.2f", p.id, self.owner, sim)
+                rospy.loginfo("person_follower/control: sim for %u and %u %.2f", p.id, self.owner, sim)
 
                 self.known.append(p.id)
                 if sim > self.sim_threshold:
-                    rospy.loginfo("follow_state_nod2: new target %u", p.id)
+                    rospy.loginfo("person_follower/control: new target %u", p.id)
                     self.mark_target(p.id)
 
 
@@ -458,7 +458,11 @@ class ControlNode:
 
     def select_facing(self, msg):
         for p in msg.poses:
+            if not p.id:
+                continue
+
             if self.is_facing(p):
+                rospy.loginfo("person_follower/control: selected facing %u", p.id)
                 self.mark_target(p.id)
 
 
