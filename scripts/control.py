@@ -314,6 +314,9 @@ class ControlNode:
         self.embedding = None
 
         self.target_pub.publish(UInt32(data=0))
+
+        rospy.loginfo("person_follower/control: target release - cleared state")
+        self.state_machine.reset()
         self.state_pub.publish("")
         self.stop()
 
@@ -392,12 +395,14 @@ class ControlNode:
                     self.mark_target(p.id)
 
 
+
     def mark_target(self, pid):
         self.target_pub.publish(UInt32(data=pid))
-        self.owner     = pid
-        self.last_seen = 0
-        # self.embedding = None
-        self.known     = []
+        self.owner         = pid
+        self.last_seen     = 0
+        self.missing_since = None
+        # self.embedding   = None
+        self.known         = []
 
 
 
