@@ -1,6 +1,6 @@
 {
     "follow": {
-        "enter": "move-forward",
+        "enter": "follow-me",
         "exit":  "stop"
     },
     "move-backward": {
