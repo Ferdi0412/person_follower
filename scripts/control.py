@@ -270,12 +270,12 @@ def cosine_similarity(a, b):
 ################
 class ControlNode:
     def __init__(self, state_machine):
-        rospy.init_node("person_follower_state_node2")
+        rospy.init_node("person_follower_control")
         rospy.on_shutdown(self.release_target)
 
-        rospy.loginfo("person_follower_state_node3: waiting for reid service")
+        rospy.loginfo("person_follower/control: waiting for reid service")
         rospy.wait_for_service("get_embedding")
-        rospy.loginfo("person_follower_state_node3: reid service found")
+        rospy.loginfo("person_follower/control: reid service found")
 
         self.state_machine = state_machine
 
@@ -347,11 +347,11 @@ class ControlNode:
             resp = self.embed_client(x=x, y=y, width=w, height=h)
 
         except rospy.ServiceException as e:
-            rospy.logwarn_throttle(5.0, "person_follower_state_node3: embedding failed - %s", e)
+            rospy.logwarn_throttle(5.0, "person_follower/control: embedding failed - %s", e)
             return
 
         if resp.error_message:
-            rospy.logwarn_throttle(5.0, "person_follower_state_node3: embedding service rejected - %s", resp.error_message)
+            rospy.logwarn_throttle(5.0, "person_follower/control: embedding service rejected - %s", resp.error_message)
             return
 
         return resp.embedding
@@ -365,7 +365,7 @@ class ControlNode:
         if not self.embedding:
             self.embedding = self.get_embedding(pose)
             if self.embedding:
-                rospy.loginfo("person_follower_state_node2: now have embedding for %u", self.owner)
+                rospy.loginfo("person_follower/control: now have embedding for %u", self.owner)
 
 
 
@@ -417,7 +417,7 @@ class ControlNode:
             self.last_published = state
             self.last_x = 0
             self.last_z = 0
-            rospy.loginfo("person_follower_state_node: state is now '%s'", state)
+            rospy.loginfo("person_follower/control: state is now '%s'", state)
 
 
 
