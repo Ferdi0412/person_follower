@@ -97,4 +97,4 @@ add_node(core_node src/core.cpp)
 add_node(reid_server src/reid_server.cpp)
 
 add_py_node(scripts/gestures.py)
-add_py_node(scripts/follow_state.py)
+add_py_node(scripts/control.py)

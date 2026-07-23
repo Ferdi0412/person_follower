@@ -9,7 +9,7 @@
         <rosparam file="$(arg config_file)" command="load"/>
     </node>
 
-    <node pkg="person_follower" type="follow_state.py" name="follow_state" output="screen">
+    <node pkg="person_follower" type="control.py" name="control" output="screen">
         <rosparam file="$(arg config_file)" command="load"/>
     </node>
 

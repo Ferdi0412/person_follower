@@ -1,5 +1,14 @@
-[
-    {"name": "follow", "enter": "follow-me", "exit": "stop"},
-    {"name": "stop",   "enter": "stop"},
-    {"name": "spin",   "enter": "spin"}
-]
+{
+    "follow": {
+        "enter": "move-forward",
+        "exit":  "stop"
+    },
+    "move-backward": {
+        "enter": "move-back",
+        "continue_on": ["move-continue"]
+    },
+    "move-forward": {
+        "enter": "move-forward",
+        "continue_on": ["move-continue"]
+    }
+}
