@@ -469,7 +469,7 @@ class FollowStateNode:
         goal_d = d - FOLLOW_STANDOFF
 
         if goal_d < 0:
-            self.stop()
+            self.face(dx, dz)
             return
 
         x = (dx / d) * goal_d
@@ -482,6 +482,26 @@ class FollowStateNode:
         goal.pose.position.y = 0.0
         goal.pose.position.z = (dz / d) * goal_d
         goal.pose.orientation.w = 1.0
+
+        self.goal_pub.publish(goal)
+
+
+    def face(self, dx, dz):
+        """Publishes in-place goal to rotate and face target."""
+        if abs(dx) < 1e-6 and abs(dz) < 1e-6:
+            self.stop()
+            return
+
+        yaw = math.atan2(dx, dz)
+
+        goal = PoseStamped()
+        goal.header.frame_id = self.pose_frame_id
+        goal.header.stamp = rospy.Time.now()
+        goal.pose.position.x = 0.0
+        goal.pose.position.y = 0.0
+        goal.pose.position.z = 0.0
+        goal.pose.orientation.y = math.sin(yaw / 2.0)
+        goal.pose.orientation.w = math.cos(yaw / 2.0)
 
         self.goal_pub.publish(goal)
 
